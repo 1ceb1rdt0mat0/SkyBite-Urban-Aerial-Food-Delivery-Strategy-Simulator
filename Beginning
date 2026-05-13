@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>角色B详细任务清单 - SkyBite无人机配送模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e6edf4 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 2rem 1.5rem;
+            color: #1a2c3e;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.92);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+            overflow: hidden;
+            backdrop-filter: blur(0px);
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: #0b2b3b;
+            padding: 2rem 2rem 1.5rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 small {
+            font-size: 0.9rem;
+            background: #ffb347;
+            background: linear-gradient(135deg, #ffb347, #ff8c1a);
+            padding: 0.25rem 1rem;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #1e2f3a;
+        }
+
+        .header p {
+            margin-top: 0.75rem;
+            font-size: 1rem;
+            opacity: 0.85;
+            max-width: 85%;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: #2c7da0;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .summary-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1.8rem 2rem;
+            background: #fefcf5;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 180px;
+            background: white;
+            border-radius: 1.2rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e9edf2;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            color: #2c7da0;
+            border-left: 4px solid #ffb347;
+            padding-left: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #2c3e44;
+        }
+
+        .week-tabs {
+            padding: 0 2rem;
+            background: #ffffffcc;
+            border-bottom: 1px solid #e2edf2;
+        }
+
+        .week-buttons {
+            display: flex;
+            gap: 1rem;
+            padding: 0.8rem 0 0 0;
+        }
+
+        .week-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            border-radius: 40px;
+            transition: all 0.2s;
+            color: #2a5f73;
+        }
+
+        .week-btn.active {
+            background: #ffb347;
+            color: #1e2f3a;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .week-content {
+            display: none;
+            padding: 1.5rem 2rem 2rem 2rem;
+            animation: fade 0.25s ease;
+        }
+
+        .week-content.active {
+            display: block;
+        }
+
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .task-table th {
+            background: #eef2f7;
+            padding: 1rem 0.8rem;
+            text-align: left;
+            font-weight: 600;
+            color: #1e4b5e;
+            border-bottom: 2px solid #d4e0e9;
+        }
+
+        .task-table td {
+            padding: 0.9rem 0.8rem;
+            border-bottom: 1px solid #eef2f8;
+            vertical-align: top;
+            color: #1e3a47;
+        }
+
+        .task-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .day-badge {
+            background: #2c7da0;
+            color: white;
+            border-radius: 30px;
+            padding: 0.2rem 0.9rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .output {
+            background: #f9fafc;
+            border-radius: 12px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            font-family: 'SF Mono', monospace;
+            color: #1d5a6e;
+            border-left: 3px solid #ffb347;
+        }
+
+        .tech-stack {
+            margin: 1.5rem 2rem 0.5rem 2rem;
+            background: #eef2fa;
+            padding: 1rem 1.5rem;
+            border-radius: 1.2rem;
+        }
+
+        .tech-stack h4 {
+            color: #1e4b5e;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .footer {
+            padding: 1rem 2rem 1.8rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6c8b9b;
+            border-top: 1px solid #e2eaf0;
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 0.8rem; }
+            .task-table th, .task-table td { padding: 0.7rem 0.5rem; font-size: 0.85rem; }
+            .header h1 { font-size: 1.5rem; }
+            .week-content { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>
+            🚁 角色B · 程序开发与可视化
+            <small>SkyBite 城市空中外卖模拟器</small>
+        </h1>
+        <p>负责整个模拟器的代码实现、交互界面、动态图表与最终打包交付。<br>核心工具：Python + Streamlit / Pygame + Matplotlib + 参数化集成。</p>
+        <div class="role-badge">📌 三周闭环 · 每天产出可执行代码块</div>
+    </div>
+
+    <div class="summary-cards">
+        <div class="card"><h3>🎯 核心职责</h3><p>无人机运动可视化 · 订单生成引擎 · 实时图表面板 · 参数调节控件 · 风扰开关 · 程序打包交付</p></div>
+        <div class="card"><h3>⚙️ 技术栈</h3><p>Python 3.9+ , Streamlit (推荐) / Tkinter备选 , Matplotlib , Pandas , NumPy , Pygame(动画)</p></div>
+        <div class="card"><h3>📦 最终产出</h3><p>可执行程序(.exe或云端链接) + 操作演示视频 + 完整交互界面 + 源代码仓库</p></div>
+    </div>
+
+    <!-- 三周标签页切换 -->
+    <div class="week-tabs">
+        <div class="week-buttons">
+            <button class="week-btn active" data-week="week1">📆 第1周 · 框架搭建</button>
+            <button class="week-btn" data-week="week2">⚡ 第2周 · 核心逻辑与图表</button>
+            <button class="week-btn" data-week="week3">🚀 第3周 · 优化 打包 交付</button>
+        </div>
+    </div>
+
+    <!-- 第1周内容 -->
+    <div id="week1" class="week-content active">
+        <table class="task-table">
+            <thead>
+                <tr><th width="12%">日期</th><th width="50%">具体任务</th><th width="38%">产出物 / 验收标准</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="day-badge">第1天</span></td><td>安装Python + Streamlit / VS Code环境，创建空项目，显示“Hello SkyBite”基础窗口。配置git进行版本管理。</td><td class="output">可运行的空窗口截图 + 远程仓库init</td></tr>
+                <tr><td><span class="day-badge">第2天</span></td><td>实现5x5或8x8网格地图界面，用圆圈代表无人机，支持鼠标点击设置起降点（起点强制为(0,0)或中心格）。</td><td class="output">网格地图 + 无人机静态显示 + 起点/终点高亮</td></tr>
+                <tr><td><span class="day-badge">第3天</span></td><td>根据角色A的运动方程，实现无人机的参数化移动（匀速直线飞行），加入开始/暂停按钮，展示移动动画。</td><td class="output">无人机可沿直线移动至目标点，实时刷新坐标</td></tr>
+                <tr><td><span class="day-badge">第4天</span></td><td>整合角色A的订单密度函数，随机生成配送订单（目标点、时限），地图上显示订单图标（星形/小旗）。</td><td class="output">动态订单生成，完成订单后消失并累计计数</td></tr>
+                <tr><td><span class="day-badge">第5天</span></td><td>实现顶部状态栏：剩余电量（百分比）、已完成订单数、累计利润（初始模拟值），电量按飞行的欧氏距离线性/指数衰减（接入角色A公式初版）。</td><td class="output">状态栏实时刷新，电量降至0时弹出警告</td></tr>
+                <tr><td colspan="3" style="background:#fef4e8;"><strong>📌 周末联调里程碑</strong>：与角色A、C对接，运动方程替换为正式公式，成本参数挂载到利润显示。确保网格交互基础稳定。</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 第2周内容 -->
+    <div id="week2" class="week-content">
+        <table class="task-table">
+            <thead><tr><th>日期</th><th>具体任务</th><th>产出物</th></tr></thead>
+            <tbody>
+                <tr><td><span class="day-badge">第6天</span></td><td>设计简化路径规划：根据订单列表计算曼哈顿/欧氏距离，按照“最近邻”或者“先到先服务”自动选择下一单。</td><td class="output">自动规划下一个目标点，无人机连续配送3单以上不卡死</td></tr>
+                <tr><td><span class="day-badge">第7天</span></td><td>集成风扰模块：添加勾选框“开启侧风影响”，无人机实际位置增加正弦偏移 \(\vec{W}(t)\)，并显示理论轨迹与实际轨迹对比（半透明线）。</td><td class="output">风扰开关+视觉抖动效果（模拟真实环境）</td></tr>
+                <tr><td><span class="day-badge">第8天</span></td><td>实现实时动态图表区域：能耗曲线（横轴: 飞行任务序号/时间）、累计利润折线图，使用matplotlib或streamlit line_chart动态更新。</td><td class="output">每次配送完成后图表刷新，数据可见趋势</td></tr>
+                <tr><td><span class="day-badge">第9天</span></td><td>添加参数调节滑条（st.slider或tk.Scale）：电池容量系数、风速强度、订单密度倍率、每单收入。参数改变后实时重置模拟或热更新。</td><td class="output">交互面板，用户可任意调整并观察利润/能耗变化</td></tr>
+                <tr><td><span class="day-badge">第10天</span></td><td>实现超时/超电量失败弹窗与配送失败记录。添加“重置模拟”按钮，一键恢复到初始状态（电量满、订单计数归零）。</td><td class="output">失败提示框 + 事件日志区（如右侧侧边栏）</td></tr>
+                <tr><td colspan="3" style="background:#fef4e8;"><strong>📌 周末整合</strong>：与角色A共同验证模型一致性，与角色C配合商业策略不同参数下的Profit曲线，完善Sidebar说明文档。</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 第3周内容 -->
+    <div id="week3" class="week-content">
+        <table class="task-table">
+            <thead><tr><th>日期</th><th>具体任务</th><th>产出物</th></tr></thead>
+            <tbody>
+                <tr><td><span class="day-badge">第11天</span></td><td>UI美化：使用角色C提供的Logo和配色方案，统一字体，增加关于对话框（项目介绍、数学原理简述）。</td><td class="output">符合传媒风格的现代化界面，体现SkyBite品牌</td></tr>
+                <tr><td><span class="day-badge">第12天</span></td><td>将程序打包为独立可执行文件（PyInstaller 生成 .exe）或部署至Streamlit Cloud，生成公网链接。确保无Python环境用户可直接运行。</td><td class="output">可执行文件(Windows)/云地址 + 简单README使用说明</td></tr>
+                <tr><td><span class="day-badge">第13天</span></td><td>录制程序操作演示视频（1~2分钟），展示功能点：参数调节、风扰开启、配送流程、利润图表、仿真重置。</td><td class="output">MP4视频文件，用于答辩及宣传片素材</td></tr>
+                <tr><td><span class="day-badge">第14天</span></td><td>最终调试：修复边界BUG（电量负无穷、订单无限生成），优化计算性能，增加“一键生成报告”导出模拟数据（CSV）。</td><td class="output">稳定无崩溃最终版 + 导出的数据样例</td></tr>
+                <tr><td><span class="day-badge">第15天</span></td><td>现场演示预演：确保笔记本/投影环境正常，程序响应迅速，准备答辩演示流程话术（由角色B主导技术演示部分）。</td><td class="output">现场演示成功，无突发错误</td></tr>
+                <tr><td colspan="3" style="background:#eef6e8;"><strong>🎯 最终交付物清单</strong>：<br>✅ 完整源代码 (GitHub/Gitee) <br>✅ Windows可执行程序或Web App链接<br>✅ 操作演示视频(1min)<br>✅ README包含环境配置、操作手册<br>✅ 协助拍摄宣传片所需模拟器素材</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tech-stack">
+        <h4>🛠️ 角色B 关键技术细节 & 建议</h4>
+        <ul style="margin-left: 1.2rem; line-height: 1.5; color: #2d4b5e;">
+            <li><strong>推荐框架 Streamlit</strong>：无需前端知识即可快速生成滑块、图表、按钮，迭代速度快，3周内最容易交付完整交互模拟器。</li>
+            <li><strong>运动学实现</strong>：利用 session_state (Streamlit) 存储无人机位置、电量、订单list，每一帧通过“步进”按钮或定时刷新模拟离散时间步长。</li>
+            <li><strong>与角色A协作</strong>：将数学公式包装为Python函数 <code>def position(t, params)</code> 、<code>battery_consumption(distance, wind, load)</code> ，直接调用。</li>
+            <li><strong>图表动态更新</strong>：使用 <code>st.line_chart</code> 或 matplotlib 的 <code>pyplot</code> 结合缓存，每次配送后追加数据点。</li>
+            <li><strong>版本控制</strong>：建议使用 GitHub 组织仓库，角色B为主力提交者，角色A/角色C可提供数据/文本修改。</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        🌟 角色B每日工作强度约 3-4 小时 | 周末联调确保与角色A的数学推导、角色C的商业面板完全对接<br>
+        ✅ 目标：第三周末交付一个令人眼前一亮的“空中外卖策略模拟器” — 完美体现AP Precalculus核心建模思想。
+    </div>
+</div>
+
+<script>
+    // 简单切换周次内容
+    const btns = document.querySelectorAll('.week-btn');
+    const contents = {
+        week1: document.getElementById('week1'),
+        week2: document.getElementById('week2'),
+        week3: document.getElementById('week3')
+    };
+
+    function activateWeek(weekId) {
+        for(let key in contents) {
+            if(contents[key]) contents[key].classList.remove('active');
+        }
+        if(contents[weekId]) contents[weekId].classList.add('active');
+        btns.forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.getAttribute('data-week') === weekId) {
+                btn.classList.add('active');
+            }
+        });
+    }
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const week = btn.getAttribute('data-week');
+            if(week) activateWeek(week);
+        });
+    });
+</script>
+</body>
+</html>
