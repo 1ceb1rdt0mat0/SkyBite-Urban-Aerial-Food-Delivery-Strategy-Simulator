@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SkyBite · 智能路径对比 | 风速区代价函数 · 动态盈利能力</title>
+    <!-- Chart.js 轻量图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9f0f5 0%, #d9e2ec 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Poppins', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 20px;
+        }
+
+        .sim-card {
+            max-width: 1500px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(156, 180, 194, 0.2);
+            overflow: hidden;
+            padding: 1.5rem 2rem 2rem 2rem;
+        }
+
+        .brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 1.8rem;
+            border-bottom: 2px solid #00bfa6;
+            padding-bottom: 0.75rem;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #005f73, #0a9396);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+        .logo p {
+            font-size: 0.8rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        .grid-panel {
+            flex: 1.2;
+            min-width: 320px;
+        }
+        .right-panel {
+            flex: 1.1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .map-container {
+            background: #1e2f3a;
+            border-radius: 2rem;
+            padding: 1rem;
+            box-shadow: inset 0 0 0 2px #2c4b5e, 0 12px 24px rgba(0,0,0,0.2);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #eef4fa;
+            border-radius: 1.5rem;
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.4rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(10, 147, 150, 0.25);
+        }
+        .info-title {
+            font-weight: 700;
+            color: #005f73;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-left: 4px solid #0a9396;
+            padding-left: 0.7rem;
+        }
+        .metric {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #0b3b42;
+            line-height: 1.2;
+        }
+        .metric span { font-size: 0.9rem; font-weight: 400; color: #5e7e8c; }
+        .slider-group { margin: 1rem 0 0.6rem; }
+        .slider-group label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #2c5a66; display: block; }
+        input[type="range"] { width: 100%; accent-color: #0a9396; }
+        button {
+            background: #0a9396;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            width: 100%;
+            margin-top: 0.6rem;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 0.85rem;
+        }
+        button:active { transform: scale(0.97); }
+        .reset-btn { background: #e67e22; }
+        .flex-row { display: flex; justify-content: space-between; gap: 1rem; }
+        .toggle-switch { display: flex; align-items: center; gap: 0.6rem; margin: 0.6rem 0; }
+        hr { margin: 0.8rem 0; border-color: #cbdae6; }
+        .info-note { font-size: 0.7rem; color: #0a9396; background: #e0f2f1; border-radius: 16px; padding: 4px 8px; margin-top: 8px; text-align: center; }
+
+        /* 对比表格样式 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        .compare-table th, .compare-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 1px solid #d0dfe5;
+        }
+        .compare-table th {
+            background: #eef4fa;
+            color: #005f73;
+            font-weight: 700;
+        }
+        .badge-path {
+            display: inline-block;
+            background: #0a9396;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .highlight-wind {
+            background: #ffe0b5;
+        }
+        .warning { font-size: 0.7rem; color: #c44536; margin-top: 0.5rem; text-align: center; }
+        @media (max-width: 780px) {
+            .sim-card { padding: 1rem; }
+            .metric { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="sim-card">
+    <div class="brand">
+        <div class="logo">
+            <h1>☁️ SkyBite · 风场路径决策</h1>
+            <p>代价函数 | 能耗成本模型 | 双路径对比 | 动态盈利能力</p>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- 左侧网格地图 -->
+        <div class="grid-panel">
+            <div class="map-container">
+                <canvas id="gridCanvas" width="500" height="500" style="width:100%; height:auto; aspect-ratio:1/1"></canvas>
+            </div>
+            <div class="warning" id="statusMsg">✅ 系统就绪 | 红色半透明区 = 高楼风区 (额外能耗+3%/格) | 实际配送已采用新经济模型</div>
+        </div>
+
+        <!-- 右侧面板：飞行状态 + 对比面板 + 实时曲线 -->
+        <div class="right-panel">
+            <div class="info-card">
+                <div class="info-title">⚡ 飞行状态 & 实时经济</div>
+                <div class="metric" id="batteryValue">100.0 <span>%</span></div>
+                <div class="metric" style="font-size:1rem;">⚡ 剩余电量 <span id="energyLeft">100</span>% &nbsp;| 📉 总耗电 <span id="totalConsumed">0</span>%</div>
+                <div class="metric" style="font-size:1rem;">📦 已配送: <span id="deliveredCount">0</span> 单 &nbsp;| 🟡 待配送: <span id="pendingOrders">0</span></div>
+                <div class="metric" style="font-size:1rem;">💰 累计净利润: $<span id="profitVal">0.00</span></div>
+                <div class="metric" style="font-size:0.9rem;">📊 单均净利: $<span id="avgProfit">0.00</span></div>
+                <hr>
+                <div class="slider-group">
+                    <label>📈 订单生成倍率</label>
+                    <input type="range" id="spawnRateSlider" min="0.3" max="2.5" step="0.05" value="1.0">
+                    <span id="spawnVal">1.0x</span>
+                </div>
+                <div class="flex-row">
+                    <button id="startBtn">🚁 开始配送 (自动最优路径)</button>
+                    <button id="resetBtn" class="reset-btn">🔄 重置模拟器</button>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="autoMoveCB" checked> <label>🤖 连续配送 (完成一单自动下一单)</label>
+                </div>
+                <div class="info-note">
+                    💡 新模型：基础耗电5%/格，风区+3%/格；收入 = $10配送费 + 速度奖励；成本 = 电费($0.02/%) + 折旧($0.01/秒)<br>
+                    🧭 下方对比面板：基于当前位置→最近订单，展示“最短路径” vs “避风绕路路径”的预估性能。
+                </div>
+            </div>
+
+            <!-- 新增：双路径对比面板 -->
+            <div class="info-card">
+                <div class="info-title">📊 路径决策对比 (当前位置 → 最近订单)</div>
+                <table class="compare-table" id="compareTable">
+                    <thead>
+                        <tr><th></th><th>⚡ 最短路径 (无视风区)</th><th>🌀 避风绕路路径 (代价优化)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>📏 路径长度</td><td id="path1_len">-</td><td id="path2_len">-</td></tr>
+                        <tr><td>⏱️ 配送时间</td><td id="path1_time">-</td><td id="path2_time">-</td></tr>
+                        <tr><td>🔋 总能耗</td><td id="path1_energy">-</td><td id="path2_energy">-</td></tr>
+                        <tr><td>💰 净利润</td><td id="path1_profit">-</td><td id="path2_profit">-</td></tr>
+                        <tr><td>🌟 推荐指数</td><td id="path1_rec">-</td><td id="path2_rec">-</td></tr>
+                    </tbody>
+                </table>
+                <button id="refreshCompareBtn" style="background:#0f4c5f; margin-top:8px;">🔄 刷新对比 (基于当前最近订单)</button>
+                <div class="info-note" style="margin-top:6px;">绕路路径通过A*避开高风速区，代价 = 曼哈顿距离 + 风速惩罚×经过风区次数</div>
+            </div>
+
+            <!-- 实时曲线卡片 -->
+            <div class="info-card" style="padding:0.8rem;">
+                <div class="info-title">📈 实时盈利曲线 & 能耗曲线</div>
+                <canvas id="performanceChart" width="400" height="200" style="width:100%; height:170px;"></canvas>
+                <div style="font-size:0.65rem; text-align:center;">累计净利润 (绿) & 累计耗电 (蓝) vs 配送次数</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================= 全局配置 =======================
+    const GRID_SIZE = 5;
+    // 高风速区 (高楼区域) 坐标集合
+    const WIND_ZONES = [[1,2], [2,2], [2,3], [3,2], [1,3], [2,1]];   // 模拟市中心峡谷
+    // 经济模型参数
+    const BASE_POWER_PER_CELL = 5.0;        // 基础耗电 %/格
+    const EXTRA_WIND_POWER = 3.0;           // 风区额外耗电 %/格
+    const BASE_DELIVERY_FEE = 10.0;         // 基础配送费 (美元)
+    const ELECTRICITY_PRICE = 0.02;         // 每消耗1%电量的成本 (美元)
+    const DEPRECIATION_PER_SEC = 0.01;      // 折旧 $/秒
+    const TIME_PER_STEP = 0.36;             // 每格移动耗时 (秒)  对应 360ms
+    const SPEED_BONUS_RATE = 0.05;          // 速度奖励 $/秒 (提前到达奖励)
+    
+    // 无人机状态
+    let dronePos = { x: 0, y: 0 };
+    let orders = [];
+    let deliveredCount = 0;
+    let totalNetProfit = 0;                 // 累计净利润 (替代原来的 totalProfit)
+    let batteryPercent = 100.0;
+    let totalConsumedPercent = 0;
+    let spawnRateMulti = 1.0;
+    
+    let simulationInterval = null;
+    let isMoving = false;
+    let autoDeliveryEnabled = true;
+    let nextOrderId = 1;
+    
+    // 图表数据
+    let energyHistory = [0];   // 累计耗电
+    let profitHistory = [0];   // 累计净利润
+    let chart = null;
+    
+    // DOM 元素
+    const canvas = document.getElementById('gridCanvas');
+    let ctx = canvas.getContext('2d');
+    let cellW, cellH;
+    
+    // 移动参数
+    const MOVE_STEP_DELAY_MS = 360;
+    const AUTO_NEXT_DELAY_MS = 480;
+    
+    // ========== 辅助函数：判断是否为风区 ==========
+    function isWindZone(x, y) {
+        return WIND_ZONES.some(([wx, wy]) => wx === x && wy === y);
+    }
+    
+    // ========== 更新界面 ==========
+    function updateUI() {
+        document.getElementById('batteryValue').innerHTML = batteryPercent.toFixed(1) + ' <span>%</span>';
+        document.getElementById('energyLeft').innerText = Math.floor(batteryPercent);
+        document.getElementById('totalConsumed').innerText = totalConsumedPercent.toFixed(1);
+        document.getElementById('deliveredCount').innerText = deliveredCount;
+        document.getElementById('pendingOrders').innerText = orders.length;
+        document.getElementById('profitVal').innerText = totalNetProfit.toFixed(2);
+        let avg = deliveredCount === 0 ? 0 : totalNetProfit / deliveredCount;
+        document.getElementById('avgProfit').innerText = avg.toFixed(2);
+        if(batteryPercent <= 20) document.getElementById('statusMsg').innerHTML = '⚠️ 低电量警告！尽快配送或重置';
+    }
+    
+    // ========== 新能耗模型：移动一格消耗 = 基础+风区额外 ==========
+    function getMoveConsumeForCell(x, y) {
+        let extra = isWindZone(x, y) ? EXTRA_WIND_POWER : 0;
+        return BASE_POWER_PER_CELL + extra;
+    }
+    
+    // 执行一步移动 (基于新能耗模型)
+    function performMoveStep(targetX, targetY) {
+        if (dronePos.x === targetX && dronePos.y === targetY) return true;
+        let nx = dronePos.x, ny = dronePos.y;
+        let dx = targetX - nx, dy = targetY - ny;
+        let stepX = dx === 0 ? 0 : (dx > 0 ? 1 : -1);
+        let stepY = dy === 0 ? 0 : (dy > 0 ? 1 : -1);
+        let newX = nx + stepX, newY = ny + stepY;
+        let consume = getMoveConsumeForCell(newX, newY);
+        if (batteryPercent < consume) {
+            document.getElementById('statusMsg').innerText = '❌ 电量不足！请重置';
+            return false;
+        }
+        batteryPercent -= consume;
+        totalConsumedPercent += consume;
+        dronePos = { x: newX, y: newY };
+        updateUI();
+        drawGrid();
+        if (batteryPercent <= 20) document.getElementById('statusMsg').innerHTML = '⚠️ 低电量，注意风区额外耗电';
+        return true;
+    }
+    
+    // ========== 动态利润计算 (基于实际飞行数据) ==========
+    function calculateProfitForDelivery(routeSteps, windZoneCount, actualTimeSec) {
+        // routeSteps: 移动步数, windZoneCount: 经过风区的次数
+        let totalEnergy = routeSteps * BASE_POWER_PER_CELL + windZoneCount * EXTRA_WIND_POWER;
+        let energyCost = totalEnergy * ELECTRICITY_PRICE;
+        let depreciationCost = actualTimeSec * DEPRECIATION_PER_SEC;
+        let totalCost = energyCost + depreciationCost;
+        
+        // 基准时间 = 曼哈顿距离 * TIME_PER_STEP (理想最短)
+        let manhattanDist = routeSteps; // 实际移动步数等于曼哈顿距离（因为最短路径无绕路，绕路后步数更多，这里传入实际步数）
+        let baselineTime = manhattanDist * TIME_PER_STEP;
+        let timeBonus = 0;
+        if (actualTimeSec < baselineTime) {
+            timeBonus = (baselineTime - actualTimeSec) * SPEED_BONUS_RATE;
+        }
+        let revenue = BASE_DELIVERY_FEE + timeBonus;
+        return revenue - totalCost;
+    }
+    
+    // 配送完成 (使用新模型记录实际步数、风区次数、实际耗时)
+    function completeDelivery(order, stepsTaken, windZoneCount, actualTimeSec) {
+        const idx = orders.findIndex(o => o.id === order.id);
+        if (idx !== -1) orders.splice(idx,1);
+        deliveredCount++;
+        let netProfit = calculateProfitForDelivery(stepsTaken, windZoneCount, actualTimeSec);
+        totalNetProfit += netProfit;
+        // 记录曲线
+        energyHistory.push(totalConsumedPercent);
+        profitHistory.push(totalNetProfit);
+        updateChart();
+        updateUI();
+        document.getElementById('statusMsg').innerHTML = `✅ 配送成功! 净利润 $${netProfit.toFixed(2)} | 耗时 ${actualTimeSec.toFixed(1)}秒 | 累计净利润 $${totalNetProfit.toFixed(2)}`;
+        if (autoDeliveryEnabled && orders.length > 0 && batteryPercent > 0) {
+            setTimeout(() => attemptNextDelivery(), AUTO_NEXT_DELAY_MS);
+        } else {
+            isMoving = false;
+            if (orders.length === 0 && batteryPercent > 0) document.getElementById('statusMsg').innerHTML = '🏁 所有订单已完成，新订单自动生成';
+        }
+    }
+    
+    // 移动至目标并统计风区次数与时间 (改造原 moveToOrder)
+    function moveToOrderWithStats(order, onComplete) {
+        if (!order) { if(onComplete) onComplete(false); return; }
+        const target = { x: order.x, y: order.y };
+        let steps = 0;
+        let windZoneCount = 0;
+        const startTime = performance.now();
+        
+        function step() {
+            if (dronePos.x === target.x && dronePos.y === target.y) {
+                const endTime = performance.now();
+                const elapsedSec = (endTime - startTime) / 1000;
+                completeDelivery(order, steps, windZoneCount, elapsedSec);
+                if (onComplete) onComplete(true);
+                return;
+            }
+            let nx = dronePos.x, ny = dronePos.y;
+            let dx = target.x - nx, dy = target.y - ny;
+            let stepX = dx === 0 ? 0 : (dx > 0 ? 1 : -1);
+            let stepY = dy === 0 ? 0 : (dy > 0 ? 1 : -1);
+            let newX = nx + stepX, newY = ny + stepY;
+            let consume = getMoveConsumeForCell(newX, newY);
+            if (batteryPercent < consume) {
+                document.getElementById('statusMsg').innerText = '❌ 电量耗尽，配送终止';
+                if(onComplete) onComplete(false);
+                return;
+            }
+            batteryPercent -= consume;
+            totalConsumedPercent += consume;
+            dronePos = { x: newX, y: newY };
+            steps++;
+            if(isWindZone(newX, newY)) windZoneCount++;
+            updateUI();
+            drawGrid();
+            setTimeout(step, MOVE_STEP_DELAY_MS);
+        }
+        step();
+    }
+    
+    // 原 attemptNextDelivery 调用新移动函数
+    function attemptNextDelivery() {
+        if (isMoving) return;
+        if (batteryPercent <= 0) { document.getElementById('statusMsg').innerText = '🔋 电量耗尽，请重置'; return; }
+        if (orders.length === 0) { if(autoDeliveryEnabled) document.getElementById('statusMsg').innerText = '📭 暂无订单，等待生成'; return; }
+        let bestOrder = null, bestDist = Infinity;
+        for (let o of orders) {
+            let d = Math.abs(o.x - dronePos.x) + Math.abs(o.y - dronePos.y);
+            if (d < bestDist) { bestDist = d; bestOrder = o; }
+        }
+        if (bestOrder) {
+            isMoving = true;
+            moveToOrderWithStats(bestOrder, (success) => {
+                isMoving = false;
+                if (success && autoDeliveryEnabled && orders.length > 0 && batteryPercent > 0) attemptNextDelivery();
+            });
+        } else isMoving = false;
+    }
+    
+    // ========== 路径规划与对比 (基于代价函数) ==========
+    // 最短路径 (无视风区) 直接曼哈顿步数，无绕路。
+    function getShortestPathSteps(start, end) {
+        return Math.abs(start.x - end.x) + Math.abs(start.y - end.y);
+    }
+    
+    // 避风路径：使用 Dijkstra 寻找最小代价路径，代价 = 1 + 风速惩罚(经过风区额外代价)
+    const WIND_PENALTY = 2.5;   // 经过风区额外代价权重 (使路径偏向绕开)
+    function findWindAvoidPath(start, end) {
+        let dist = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(Infinity));
+        let prev = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        dist[start.y][start.x] = 0;
+        let pq = [{x: start.x, y: start.y, cost: 0}];
+        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        while(pq.length) {
+            pq.sort((a,b) => a.cost - b.cost);
+            let {x, y, cost} = pq.shift();
+            if (x === end.x && y === end.y) break;
+            if (cost > dist[y][x]) continue;
+            for(let [dx, dy] of dirs) {
+                let nx = x+dx, ny = y+dy;
+                if (nx<0 || nx>=GRID_SIZE || ny<0 || ny>=GRID_SIZE) continue;
+                let stepCost = 1 + (isWindZone(nx, ny) ? WIND_PENALTY : 0);
+                let newCost = cost + stepCost;
+                if (newCost < dist[ny][nx]) {
+                    dist[ny][nx] = newCost;
+                    prev[ny][nx] = {x, y};
+                    pq.push({x: nx, y: ny, cost: newCost});
+                }
+            }
+        }
+        // 重建路径，统计步数及风区次数
+        let path = [];
+        let cur = end;
+        while (cur) {
+            path.unshift(cur);
+            let p = prev[cur.y]?.[cur.x];
+            if (!p) break;
+            cur = p;
+        }
+        if(path.length === 0 || (path[0].x !== start.x || path[0].y !== start.y)) {
+            // 若找不到路径，回退曼哈顿
+            return {steps: Math.abs(start.x-end.x)+Math.abs(start.y-end.y), windCount: 0};
+        }
+        let steps = path.length - 1;
+        let windCount = 0;
+        for(let i=1; i<path.length; i++) {
+            if(isWindZone(path[i].x, path[i].y)) windCount++;
+        }
+        return {steps, windCount};
+    }
+    
+    // 计算某路径的预估净利润 (用于对比面板)
+    function estimateProfitForPath(steps, windCount) {
+        let totalEnergy = steps * BASE_POWER_PER_CELL + windCount * EXTRA_WIND_POWER;
+        let energyCost = totalEnergy * ELECTRICITY_PRICE;
+        let timeSec = steps * TIME_PER_STEP;
+        let depreciation = timeSec * DEPRECIATION_PER_SEC;
+        let totalCost = energyCost + depreciation;
+        let baselineTime = (Math.abs(dronePos.x - (orders[0]?.x || 4)) + Math.abs(dronePos.y - (orders[0]?.y || 4))) * TIME_PER_STEP;
+        let speedBonus = (baselineTime > timeSec) ? (baselineTime - timeSec) * SPEED_BONUS_RATE : 0;
+        let revenue = BASE_DELIVERY_FEE + speedBonus;
+        return revenue - totalCost;
+    }
+    
+    // 刷新对比面板 (基于当前无人机位置 与 最近的订单)
+    function refreshComparePanel() {
+        if (orders.length === 0) {
+            document.getElementById('path1_len').innerText = '无订单';
+            document.getElementById('path2_len').innerText = '无订单';
+            return;
+        }
+        let nearest = null;
+        let minDist = Infinity;
+        for (let o of orders) {
+            let d = Math.abs(o.x - dronePos.x) + Math.abs(o.y - dronePos.y);
+            if (d < minDist) { minDist = d; nearest = o; }
+        }
+        if (!nearest) return;
+        let start = dronePos;
+        let end = {x: nearest.x, y: nearest.y};
+        // 路径1: 最短曼哈顿
+        let steps1 = Math.abs(start.x - end.x) + Math.abs(start.y - end.y);
+        let windCount1 = 0;
+        // 模拟曼哈顿路径经过的风区 (简单模拟方向步进，不复杂穷举，用于对比)
+        let tx = start.x, ty = start.y;
+        while(tx !== end.x || ty !== end.y) {
+            if(tx !== end.x) tx += (tx < end.x ? 1 : -1);
+            else ty += (ty < end.y ? 1 : -1);
+            if(isWindZone(tx, ty)) windCount1++;
+        }
+        // 路径2: 避风绕路
+        let {steps: steps2, windCount: windCount2} = findWindAvoidPath(start, end);
+        let profit1 = estimateProfitForPath(steps1, windCount1);
+        let profit2 = estimateProfitForPath(steps2, windCount2);
+        let time1 = steps1 * TIME_PER_STEP;
+        let time2 = steps2 * TIME_PER_STEP;
+        document.getElementById('path1_len').innerHTML = `${steps1} 格`;
+        document.getElementById('path2_len').innerHTML = `${steps2} 格`;
+        document.getElementById('path1_time').innerHTML = `${time1.toFixed(1)}秒`;
+        document.getElementById('path2_time').innerHTML = `${time2.toFixed(1)}秒`;
+        document.getElementById('path1_energy').innerHTML = `${(steps1*BASE_POWER_PER_CELL + windCount1*EXTRA_WIND_POWER).toFixed(1)}%`;
+        document.getElementById('path2_energy').innerHTML = `${(steps2*BASE_POWER_PER_CELL + windCount2*EXTRA_WIND_POWER).toFixed(1)}%`;
+        document.getElementById('path1_profit').innerHTML = `$${profit1.toFixed(2)}`;
+        document.getElementById('path2_profit').innerHTML = `$${profit2.toFixed(2)}`;
+        document.getElementById('path1_rec').innerHTML = profit1 > profit2 ? '🏆 推荐' : '';
+        document.getElementById('path2_rec').innerHTML = profit2 > profit1 ? '🏆 推荐' : '';
+    }
+    
+    // ========== 订单生成与生命周期 ==========
+    function generateOrder() {
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * GRID_SIZE);
+            y = Math.floor(Math.random() * GRID_SIZE);
+        } while ((x === dronePos.x && y === dronePos.y) || orders.some(o => o.x === x && o.y === y));
+        const maxLife = 45 + Math.floor(Math.random() * 26);
+        orders.push({ id: nextOrderId++, x, y, life: maxLife, maxLife });
+        drawGrid();
+        updateUI();
+        refreshComparePanel();  // 新订单生成后刷新对比
+    }
+    
+    let lastSpawnTime = 0;
+    function updateOrderSpawning(now) {
+        if (!lastSpawnTime) lastSpawnTime = now;
+        let delta = Math.min(0.5, (now - lastSpawnTime)/1000);
+        if(delta<=0) return;
+        let interval = 5.5 / Math.max(0.3, spawnRateMulti);
+        if(Math.random() < delta/interval && orders.length < 14) generateOrder();
+        lastSpawnTime = now;
+    }
+    function updateOrdersLife(deltaSec) {
+        for(let i=orders.length-1; i>=0; i--) {
+            orders[i].life -= deltaSec;
+            if(orders[i].life <= 0) orders.splice(i,1);
+        }
+        drawGrid();
+        updateUI();
+        refreshComparePanel();
+    }
+    
+    // ========== 重置 ==========
+    function resetSimulation() {
+        if(simulationInterval) clearInterval(simulationInterval);
+        isMoving = false;
+        dronePos = {x:0, y:0};
+        orders = [];
+        deliveredCount = 0;
+        totalNetProfit = 0;
+        batteryPercent = 100.0;
+        totalConsumedPercent = 0;
+        nextOrderId = 1;
+        energyHistory = [0];
+        profitHistory = [0];
+        if(chart) {
+            chart.data.datasets[0].data = [...energyHistory];
+            chart.data.datasets[1].data = [...profitHistory];
+            chart.update();
+        }
+        for(let i=0;i<3;i++) generateOrder();
+        updateUI();
+        drawGrid();
+        refreshComparePanel();
+        document.getElementById('statusMsg').innerHTML = '🔄 重置完成 | 新经济模型已激活 | 高亮区为风区';
+        lastSpawnTime = Date.now();
+        simulationInterval = setInterval(() => {
+            let now = Date.now();
+            updateOrderSpawning(now);
+            updateOrdersLife(0.95);
+            if(autoDeliveryEnabled && !isMoving && orders.length>0 && batteryPercent>0) attemptNextDelivery();
+        }, 1000);
+    }
+    
+    // ========== 绘图 (风区高亮) ==========
+    function drawGrid() {
+        if(!ctx) return;
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        canvas.width = w; canvas.height = h;
+        cellW = w/GRID_SIZE; cellH = h/GRID_SIZE;
+        ctx.clearRect(0,0,w,h);
+        // 高亮风区
+        for(let i=0;i<GRID_SIZE;i++) {
+            for(let j=0;j<GRID_SIZE;j++) {
+                if(isWindZone(i,j)) {
+                    ctx.fillStyle = 'rgba(255, 100, 50, 0.25)';
+                    ctx.fillRect(i*cellW, j*cellH, cellW, cellH);
+                }
+            }
+        }
+        ctx.strokeStyle = '#9bb7c9';
+        ctx.lineWidth = 1.5;
+        for(let i=0;i<=GRID_SIZE;i++) {
+            ctx.beginPath(); ctx.moveTo(i*cellW,0); ctx.lineTo(i*cellW,h); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i*cellH); ctx.lineTo(w,i*cellH); ctx.stroke();
+        }
+        orders.forEach(o => {
+            let cx = o.x*cellW+cellW/2, cy = o.y*cellH+cellH/2;
+            ctx.beginPath(); ctx.arc(cx,cy,Math.min(cellW,cellH)*0.23,0,2*Math.PI);
+            ctx.fillStyle = '#e64b2e'; ctx.fill();
+            ctx.fillStyle='white'; ctx.font=`bold ${Math.floor(cellW*0.25)}px "Segoe UI"`;
+            ctx.fillText("🍔", cx-9, cy+6);
+        });
+        let ux = dronePos.x*cellW+cellW/2, uy = dronePos.y*cellH+cellH/2;
+        ctx.fillStyle = batteryPercent>50?'#005f73':'#e67e22';
+        ctx.beginPath(); ctx.arc(ux,uy,Math.min(cellW,cellH)*0.28,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='#eeeee0'; ctx.font=`${Math.floor(cellW*0.38)}px "Segoe UI"`;
+        ctx.fillText("✈️", ux-12, uy+8);
+    }
+    
+    // 图表初始化
+    function initChart() {
+        const chartCtx = document.getElementById('performanceChart').getContext('2d');
+        chart = new Chart(chartCtx, {
+            type:'line', data:{ datasets:[
+                { label:'累计耗电 (%)', data:[0], borderColor:'#0a9396', tension:0.2, fill:false, yAxisID:'y', pointRadius:2 },
+                { label:'累计净利润 ($)', data:[0], borderColor:'#e67e22', tension:0.2, fill:false, yAxisID:'y1', pointRadius:2 }
+            ]},
+            options:{ responsive:true, maintainAspectRatio:true, scales:{ y:{ title:{ display:true, text:'累计耗电 (%)' }, min:0 }, y1:{ position:'right', title:{ text:'净利润 ($)' }, min:0 } } }
+        });
+    }
+    function updateChart() { if(chart){ chart.data.datasets[0].data=[...energyHistory]; chart.data.datasets[1].data=[...profitHistory]; chart.update(); } }
+    
+    function bindEvents() {
+        document.getElementById('spawnRateSlider').oninput = (e) => { spawnRateMulti=parseFloat(e.target.value); document.getElementById('spawnVal').innerText=spawnRateMulti.toFixed(2)+'x'; };
+        document.getElementById('startBtn').onclick = () => { if(!isMoving && batteryPercent>0){ if(orders.length===0) generateOrder(); attemptNextDelivery(); } };
+        document.getElementById('resetBtn').onclick = () => resetSimulation();
+        document.getElementById('autoMoveCB').onchange = (e) => { autoDeliveryEnabled=e.target.checked; if(autoDeliveryEnabled && !isMoving && orders.length>0 && batteryPercent>0) attemptNextDelivery(); };
+        document.getElementById('refreshCompareBtn').onclick = () => refreshComparePanel();
+    }
+    
+    window.onload = () => { bindEvents(); initChart(); resetSimulation(); drawGrid(); };
+</script>
+</body>
+</html>
